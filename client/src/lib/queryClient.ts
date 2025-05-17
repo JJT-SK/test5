@@ -67,6 +67,16 @@ export async function apiRequest(
       const userId = 1; // Default user ID
       
       switch (true) {
+        case method === "POST" && url.includes("/api/login"):
+          // Simulate login
+          result = mockApi.getUser(userId);
+          break;
+        
+        case method === "POST" && url.includes("/api/register"):
+          // Simulate registration
+          result = mockApi.getUser(userId);
+          break;
+        
         case method === "POST" && url.includes("/api/protocols"):
           result = await mockApi.createProtocol(data as any);
           break;
@@ -99,15 +109,34 @@ export async function apiRequest(
   }
   
   // Regular API request for development
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    // Check if the response has a JSON content-type
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      // For login and register endpoints, we want to handle the response directly
+      if (url.includes("/api/login") || url.includes("/api/register")) {
+        // We'll still check if the response is ok
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || `Error: ${res.status}`);
+        }
+        return res;
+      }
+    }
+
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error(`API request error for ${method} ${url}:`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
