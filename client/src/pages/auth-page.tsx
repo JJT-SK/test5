@@ -121,7 +121,12 @@ export default function AuthPage() {
         throw new Error(errorText || "Registration failed");
       }
       
-      const user = await response.json();
+      const responseData = await response.json();
+      
+      // Update the query cache with the user data
+      if (responseData.user) {
+        queryClient.setQueryData(["/api/user"], responseData.user);
+      }
       
       // Show success message
       toast({
@@ -130,8 +135,8 @@ export default function AuthPage() {
         duration: 3000,
       });
       
-      // Force a page reload to refresh the authentication state
-      window.location.href = "/";
+      // Navigate to the home page
+      navigate("/");
     } catch (error) {
       console.error("Registration error:", error);
       toast({
