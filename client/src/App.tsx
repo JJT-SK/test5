@@ -8,10 +8,13 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
+import SignIn from "@/pages/signin";
 import Community from "@/pages/community";
 import Protocols from "@/pages/protocols";
 import Achievements from "@/pages/achievements";
 import DataAnalysis from "@/pages/data-analysis";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/components/protected-route";
 
 // Determine the base path from the import.meta.env (vite) or use an empty string
 const basePath = typeof import.meta.env.BASE_URL === 'string' 
