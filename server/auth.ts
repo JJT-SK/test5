@@ -86,18 +86,30 @@ export function setupAuth(app: Express) {
       // Hash the password
       const hashedPassword = await hashPassword(req.body.password);
       
-      // Create user with hashed password
-      const user = await storage.createUser({
-        ...req.body,
+      // Create user with hashed password and sanitize input
+      const userData = {
+        username: req.body.username,
         password: hashedPassword,
-      });
+        firstName: req.body.firstName || null,
+        lastName: req.body.lastName || null,
+        email: req.body.email || null,
+        biohackScore: req.body.biohackScore || 50,
+        currentStreak: req.body.currentStreak || 0,
+        lastCheckIn: req.body.lastCheckIn || null
+      };
+      
+      const user = await storage.createUser(userData);
+
+      // Remove password before sending response
+      const { password, ...userWithoutPassword } = user;
 
       // Log the user in
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.status(201).json(user);
+        return res.status(201).json(userWithoutPassword);
       });
     } catch (err) {
+      console.error("Registration error:", err);
       next(err);
     }
   });
@@ -109,7 +121,9 @@ export function setupAuth(app: Express) {
       
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.status(200).json(user);
+        // Remove password before sending response
+        const { password, ...userWithoutPassword } = user;
+        return res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });

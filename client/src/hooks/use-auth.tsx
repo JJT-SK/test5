@@ -33,20 +33,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/login", credentials);
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error("Login API error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${user.firstName}!`,
+        description: `Welcome back, ${user.firstName || "user"}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Login error details:", error);
       toast({
         title: "Login failed",
-        description: error.message,
+        description: "Unable to log in. Please check your credentials and try again.",
         variant: "destructive",
       });
     },
@@ -54,20 +61,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/register", credentials);
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error("Registration API error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: `Welcome to BioHacker, ${user.firstName}!`,
+        description: `Welcome to BioHacker, ${user.firstName || "new user"}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Registration error details:", error);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: "Unable to create account. Please try again with different credentials.",
         variant: "destructive",
       });
     },
