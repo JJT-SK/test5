@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | null, Error>({
+  } = useQuery<User | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
@@ -34,11 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
-      const data = await res.json();
-      return data;
+      return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${user.firstName}!`,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -52,11 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
       const res = await apiRequest("POST", "/api/register", credentials);
-      const data = await res.json();
-      return data;
+      return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Registration successful",
+        description: `Welcome to BioHacker, ${user.firstName}!`,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -73,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      toast({
+        title: "Logout successful",
+        description: "You have been logged out.",
+      });
     },
     onError: (error: Error) => {
       toast({
