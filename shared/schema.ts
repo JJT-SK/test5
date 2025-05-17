@@ -1,27 +1,15 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, varchar, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Sessions table for Replit Auth
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
-
 // Users
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(), // Back to serial ID for compatibility
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
   email: text("email"),
-  profileImageUrl: text("profile_image_url"),
   biohackScore: integer("biohack_score").default(50),
   currentStreak: integer("current_streak").default(0),
   lastCheckIn: timestamp("last_check_in"),
@@ -34,16 +22,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   email: true,
-  profileImageUrl: true,
-  biohackScore: true,
-  currentStreak: true,
-  lastCheckIn: true,
-});
-
-// Additional type for login payload
-export const loginSchema = z.object({
-  username: z.string().min(3).max(50),
-  password: z.string().min(6),
 });
 
 // Protocols

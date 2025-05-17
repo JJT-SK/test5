@@ -8,9 +8,7 @@ import {
   forumComments, type ForumComment, type InsertForumComment
 } from "@shared/schema";
 
-// No need for express-session with JWT authentication
 export interface IStorage {
-  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -58,8 +56,6 @@ export class MemStorage implements IStorage {
   private forumPosts: Map<number, ForumPost>;
   private forumComments: Map<number, ForumComment>;
   
-
-  
   private userId: number;
   private protocolId: number;
   private checkInId: number;
@@ -76,8 +72,6 @@ export class MemStorage implements IStorage {
     this.achievements = new Map();
     this.forumPosts = new Map();
     this.forumComments = new Map();
-    
-    // Using JWT for authentication instead of sessions
     
     this.userId = 1;
     this.protocolId = 1;
@@ -100,7 +94,6 @@ export class MemStorage implements IStorage {
       firstName: "John",
       lastName: "Doe",
       email: "john@example.com",
-      profileImageUrl: null,
       biohackScore: 78,
       currentStreak: 12,
       lastCheckIn: new Date(),
@@ -261,13 +254,9 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id, 
-      profileImageUrl: insertUser.profileImageUrl || null,
-      firstName: insertUser.firstName || null,
-      lastName: insertUser.lastName || null,
-      email: insertUser.email || null,
       biohackScore: 50,
       currentStreak: 0,
-      lastCheckIn: null,
+      lastCheckIn: undefined,
       createdAt: new Date() 
     };
     this.users.set(id, user);

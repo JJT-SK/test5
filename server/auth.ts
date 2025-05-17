@@ -1,74 +1,83 @@
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
 import { Express, Request, Response, NextFunction } from "express";
+import session from "express-session";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 import { storage } from "./storage";
-import { User } from "@shared/schema";
+import { User as SelectUser } from "@shared/schema";
 
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || "biohacker-app-jwt-secret";
-const JWT_EXPIRES_IN = "7d"; // 7 days
-
-// Add user type to Express request
 declare global {
   namespace Express {
-    interface Request {
-      user?: any;
-    }
+    interface User extends SelectUser {}
   }
 }
 
-// Hash a password
+const scryptAsync = promisify(scrypt);
+
 export async function hashPassword(password: string) {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
-// Compare a password against a hash
-export async function comparePasswords(supplied: string, stored: string | null) {
-  if (!stored) return false;
-  return await bcrypt.compare(supplied, stored);
+export async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Generate a JWT
-export function generateToken(user: User) {
-  // Don't include password in token payload
-  const { password, ...userWithoutPassword } = user;
-  return jwt.sign(userWithoutPassword, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
-
-// Middleware to authenticate token
-export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
-  // Get token from header or cookies
-  let token = null;
-  
-  if (req.headers.authorization?.startsWith("Bearer ")) {
-    // Get from Authorization header
-    token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies?.token) {
-    // Get from cookies
-    token = req.cookies.token;
-  }
-  
-  if (!token) {
-    return res.status(401).json({ message: "Authentication required" });
-  }
-  
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as User;
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
-}
-
-// Setup auth routes
 export function setupAuth(app: Express) {
-  // Register endpoint
-  app.post("/api/register", async (req, res) => {
+  // Initialize session store
+  const secret = process.env.SESSION_SECRET || "biohacker-secret-key-for-development";
+  const sessionSettings: session.SessionOptions = {
+    secret,
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    }
+  };
+
+  app.set("trust proxy", 1);
+  app.use(session(sessionSettings));
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // Configure Passport strategy
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false, { message: "Invalid username or password" });
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    }),
+  );
+
+  // Serialize and deserialize user
+  passport.serializeUser((user, done) => done(null, user.id));
+  passport.deserializeUser(async (id: number, done) => {
     try {
-      const { username, password, ...rest } = req.body;
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  });
+
+  // Auth routes
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      const { username, password, email, firstName, lastName } = req.body;
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
@@ -76,95 +85,77 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      // Hash password
+      // Create user with hashed password
       const hashedPassword = await hashPassword(password);
-      
-      // Create user
       const user = await storage.createUser({
         username,
         password: hashedPassword,
-        ...rest
-      });
-      
-      // Generate JWT token
-      const token = generateToken(user);
-      
-      // Set token as a cookie
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+        email,
+        firstName,
+        lastName
       });
       
       // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
+      const userResponse = { ...user };
+      delete userResponse.password;
       
-      // Return user data and token
-      res.status(201).json({
-        user: userWithoutPassword,
-        token
+      // Log user in
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(userResponse);
       });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
+    } catch (err) {
+      next(err);
     }
   });
-  
-  // Login endpoint
-  app.post("/api/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      // Check if user exists
-      const user = await storage.getUserByUsername(username);
+
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: Error, user: SelectUser, info: any) => {
+      if (err) return next(err);
       if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       
-      // Verify password
-      const isPasswordValid = await comparePasswords(password, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Generate JWT token
-      const token = generateToken(user);
-      
-      // Set token as a cookie
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+      req.login(user, (err) => {
+        if (err) return next(err);
+        
+        // Remove password from response
+        const userResponse = { ...user };
+        delete userResponse.password;
+        
+        return res.json(userResponse);
       });
-      
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-      
-      // Return user data and token
-      res.json({
-        user: userWithoutPassword,
-        token
+    })(req, res, next);
+  });
+
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        res.clearCookie("connect.sid");
+        res.sendStatus(200);
       });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed" });
+    });
+  });
+
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
     }
+    
+    // Remove password from response
+    const userResponse = { ...req.user };
+    delete userResponse.password;
+    
+    res.json(userResponse);
   });
-  
-  // Get current user endpoint
-  app.get("/api/user", isAuthenticated, (req, res) => {
-    // User is already set in req.user by the isAuthenticated middleware
-    const { password, ...userWithoutPassword } = req.user as User;
-    res.json(userWithoutPassword);
+
+  // Auth middleware for protected routes
+  app.use("/api/protected/*", (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    next();
   });
-  
-  // Logout endpoint
-  app.post("/api/logout", (req, res) => {
-    // Clear the token cookie
-    res.clearCookie("token");
-    res.json({ message: "Logged out successfully" });
-  });
-  
-  // Protect routes that require authentication
-  app.use("/api/protected/*", isAuthenticated);
 }
