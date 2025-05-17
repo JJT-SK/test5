@@ -12,7 +12,7 @@ const JWT_EXPIRES_IN = "7d"; // 7 days
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: any;
     }
   }
 }
