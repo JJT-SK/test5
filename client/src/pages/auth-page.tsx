@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
+import { queryClient } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 // Login form schema - just username and password
 const loginSchema = insertUserSchema.pick({ 
@@ -32,7 +34,8 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [location, navigate] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("login");
 
   const loginForm = useForm<LoginFormData>({
@@ -65,29 +68,79 @@ export default function AuthPage() {
     }
   }, [user, navigate]);
 
-  const handleLogin = (data: LoginFormData) => {
-    loginMutation.mutate(data, {
-      onSuccess: () => {
-        navigate("/");
-      },
-      onError: (error) => {
-        console.error("Login error:", error);
+  const handleLogin = async (data: LoginFormData) => {
+    try {
+      // Direct fetch implementation
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Login failed");
       }
-    });
+      
+      const user = await response.json();
+      
+      // Show success message
+      toast({
+        title: "Login successful",
+        description: "Welcome back to BioHacker!",
+        duration: 3000,
+      });
+      
+      // Force a page reload to refresh the authentication state
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRegister = (data: RegisterFormData) => {
-    // Remove confirmPassword as it's not part of the user model
-    const { confirmPassword, ...userData } = data;
-    
-    registerMutation.mutate(userData, {
-      onSuccess: () => {
-        navigate("/");
-      },
-      onError: (error) => {
-        console.error("Registration error:", error);
+  const handleRegister = async (data: RegisterFormData) => {
+    try {
+      // Remove confirmPassword as it's not part of the user model
+      const { confirmPassword, ...userData } = data;
+      
+      // Direct fetch implementation
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Registration failed");
       }
-    });
+      
+      const user = await response.json();
+      
+      // Show success message
+      toast({
+        title: "Registration successful",
+        description: "Welcome to BioHacker!",
+        duration: 3000,
+      });
+      
+      // Force a page reload to refresh the authentication state
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Registration failed",
+        description: "Please try again with different credentials",
+        variant: "destructive",
+      });
+    }
   };
 
   // If we're still in the process of checking authentication status, don't render anything yet
@@ -147,9 +200,9 @@ export default function AuthPage() {
                     <Button 
                       type="submit" 
                       className="w-full" 
-                      disabled={loginMutation.isPending}
+                      disabled={loginForm.formState.isSubmitting}
                     >
-                      {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                      {loginForm.formState.isSubmitting ? "Signing in..." : "Sign In"}
                     </Button>
                   </form>
                 </Form>
@@ -247,9 +300,9 @@ export default function AuthPage() {
                     <Button 
                       type="submit" 
                       className="w-full" 
-                      disabled={registerMutation.isPending}
+                      disabled={registerForm.formState.isSubmitting}
                     >
-                      {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+                      {registerForm.formState.isSubmitting ? "Creating Account..." : "Create Account"}
                     </Button>
                   </form>
                 </Form>
