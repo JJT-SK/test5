@@ -15,9 +15,9 @@ export const sessions = pgTable(
 
 // Users
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey(), // Changed to varchar for Replit Auth user ID
-  username: text("username").notNull(),
-  password: text("password"),     // Optional now, as Replit Auth handles this
+  id: serial("id").primaryKey(), // Back to serial ID for compatibility
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
   email: text("email"),
@@ -26,12 +26,11 @@ export const users = pgTable("users", {
   currentStreak: integer("current_streak").default(0),
   lastCheckIn: timestamp("last_check_in"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  id: true,
   username: true,
+  password: true,
   firstName: true,
   lastName: true,
   email: true,
@@ -39,15 +38,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   biohackScore: true,
   currentStreak: true,
   lastCheckIn: true,
-});
-
-export const upsertUserSchema = createInsertSchema(users).pick({
-  id: true,
-  username: true,
-  firstName: true,
-  lastName: true,
-  email: true,
-  profileImageUrl: true,
 });
 
 // Protocols
