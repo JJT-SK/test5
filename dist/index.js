@@ -473,12 +473,16 @@ var forumComments = pgTable("forum_comments", {
   id: serial("id").primaryKey(),
   postId: integer("post_id").notNull(),
   userId: integer("user_id").notNull(),
+  parentId: integer("parent_id"),
+  // For nested comments, null means top-level comment
   content: text("content").notNull(),
+  likeCount: integer("like_count").default(0),
   createdAt: timestamp("created_at").defaultNow()
 });
 var insertForumCommentSchema = createInsertSchema(forumComments).pick({
   postId: true,
   userId: true,
+  parentId: true,
   content: true
 });
 
@@ -822,7 +826,7 @@ var vite_config_default = defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true
   },
-  base: "/HomeHubDashboard/",
+  base: "/test2/",
   // Ensure the correct base path
   server: {
     host: true
