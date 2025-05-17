@@ -49,7 +49,7 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
 // Set up auth routes
 export function setupAuth(app: any) {
   // Register a new user
-  app.post('/api/register', async (req: Request, res: Response) => {
+  app.post('/api/register', async (req: any, res: any) => {
     try {
       const { username, password, ...userData } = req.body;
 
@@ -90,7 +90,7 @@ export function setupAuth(app: any) {
   });
 
   // Login a user
-  app.post('/api/login', async (req: Request, res: Response) => {
+  app.post('/api/login', async (req: any, res: any) => {
     try {
       const { username, password } = req.body;
 
@@ -127,12 +127,12 @@ export function setupAuth(app: any) {
   });
 
   // Get authenticated user
-  app.get('/api/user', isAuthenticated, (req: Request, res: Response) => {
+  app.get('/api/user', isAuthenticated, (req: any, res: any) => {
     res.json(req.user);
   });
 
   // Logout a user
-  app.post('/api/logout', (req: Request, res: Response) => {
+  app.post('/api/logout', (req: any, res: any) => {
     res.clearCookie('token');
     res.json({ message: 'Logged out successfully' });
   });
