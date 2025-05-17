@@ -11,14 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-
-// Login form schema - just username and password
-const loginSchema = insertUserSchema.pick({ 
-  username: true, 
-  password: true 
-});
 
 // Registration form schema
 const registerSchema = insertUserSchema.extend({

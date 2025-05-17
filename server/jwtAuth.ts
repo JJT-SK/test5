@@ -25,7 +25,7 @@ export function verifyToken(token: string): any {
 }
 
 // Authentication middleware
-export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+export function isAuthenticated(req: any, res: any, next: NextFunction) {
   try {
     // Get token from cookies
     const token = req.cookies.token;
