@@ -24,7 +24,8 @@ export async function hashPassword(password: string) {
 }
 
 // Compare a password against a hash
-export async function comparePasswords(supplied: string, stored: string) {
+export async function comparePasswords(supplied: string, stored: string | null) {
+  if (!stored) return false;
   return await bcrypt.compare(supplied, stored);
 }
 
