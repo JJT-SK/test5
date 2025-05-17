@@ -137,7 +137,7 @@ const ForumPostCard = ({ post, onClick, showContent = false, expanded = false }:
         <div className="flex items-center text-xs text-dark-light mt-2">
           <span>by @user{post.userId}</span>
           <span className="mx-2">•</span>
-          <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+          <span>{post.createdAt ? formatDistanceToNow(new Date(post.createdAt instanceof Date ? post.createdAt : new Date(post.createdAt)), { addSuffix: true }) : 'recently'}</span>
         </div>
       </div>
     );
@@ -272,7 +272,7 @@ const ForumPostCard = ({ post, onClick, showContent = false, expanded = false }:
                           <div className="flex items-center mb-1">
                             <span className="font-medium mr-2">User {comment.userId}</span>
                             <span className="text-xs text-gray-500">
-                              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                              {comment.createdAt ? formatDistanceToNow(new Date(comment.createdAt instanceof Date ? comment.createdAt : new Date(comment.createdAt)), { addSuffix: true }) : 'recently'}
                             </span>
                           </div>
                           <div className="text-gray-800 mb-2">{comment.content}</div>
@@ -305,7 +305,7 @@ const ForumPostCard = ({ post, onClick, showContent = false, expanded = false }:
                                     <div className="flex items-center mb-1">
                                       <span className="font-medium text-sm mr-2">User {reply.userId}</span>
                                       <span className="text-xs text-gray-500">
-                                        {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
+                                        {reply.createdAt ? formatDistanceToNow(new Date(reply.createdAt instanceof Date ? reply.createdAt : new Date(reply.createdAt)), { addSuffix: true }) : 'recently'}
                                       </span>
                                     </div>
                                     <div className="text-gray-800 text-sm">{reply.content}</div>

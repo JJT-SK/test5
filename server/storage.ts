@@ -8,12 +8,7 @@ import {
   forumComments, type ForumComment, type InsertForumComment
 } from "@shared/schema";
 
-import session from "express-session";
-
 export interface IStorage {
-  // Session store
-  sessionStore: session.Store;
-  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -61,8 +56,6 @@ export class MemStorage implements IStorage {
   private forumPosts: Map<number, ForumPost>;
   private forumComments: Map<number, ForumComment>;
   
-  public sessionStore: session.Store;
-  
   private userId: number;
   private protocolId: number;
   private checkInId: number;
@@ -79,12 +72,6 @@ export class MemStorage implements IStorage {
     this.achievements = new Map();
     this.forumPosts = new Map();
     this.forumComments = new Map();
-    
-    // Initialize session store for authentication
-    const MemoryStore = require('memorystore')(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    });
     
     this.userId = 1;
     this.protocolId = 1;
