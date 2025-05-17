@@ -13,10 +13,8 @@ import Protocols from "@/pages/protocols";
 import Achievements from "@/pages/achievements";
 import DataAnalysis from "@/pages/data-analysis";
 
-// Determine the base path from the import.meta.env (vite) or use an empty string
-const basePath = typeof import.meta.env.BASE_URL === 'string' 
-  ? import.meta.env.BASE_URL.replace(/\/$/, '')
-  : '';
+// Determine the base path from the import.meta.env (vite) or use the GitHub Pages path
+const basePath = "/test2"; // Use the exact GitHub repository name
 
 // Create router with hash-based routing for GitHub Pages compatibility
 function Router() {
