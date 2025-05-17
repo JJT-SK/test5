@@ -7,22 +7,8 @@ const isGitHubPages = import.meta.env.PROD;
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    try {
-      // Check if response is JSON
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
-      } else {
-        // Fallback to text response
-        const text = (await res.text()) || res.statusText;
-        throw new Error(`${res.status}: ${text}`);
-      }
-    } catch (e) {
-      // If JSON parsing fails, throw original error
-      if (e instanceof Error) throw e;
-      throw new Error(`${res.status}: ${res.statusText}`);
-    }
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
   }
 }
 
@@ -81,16 +67,6 @@ export async function apiRequest(
       const userId = 1; // Default user ID
       
       switch (true) {
-        case method === "POST" && url.includes("/api/login"):
-          // Simulate login
-          result = mockApi.getUser(userId);
-          break;
-        
-        case method === "POST" && url.includes("/api/register"):
-          // Simulate registration
-          result = mockApi.getUser(userId);
-          break;
-        
         case method === "POST" && url.includes("/api/protocols"):
           result = await mockApi.createProtocol(data as any);
           break;
@@ -123,34 +99,15 @@ export async function apiRequest(
   }
   
   // Regular API request for development
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: data ? { "Content-Type": "application/json" } : {},
-      body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
-    });
+  const res = await fetch(url, {
+    method,
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
 
-    // Check if the response has a JSON content-type
-    const contentType = res.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      // For login and register endpoints, we want to handle the response directly
-      if (url.includes("/api/login") || url.includes("/api/register")) {
-        // We'll still check if the response is ok
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || `Error: ${res.status}`);
-        }
-        return res;
-      }
-    }
-
-    await throwIfResNotOk(res);
-    return res;
-  } catch (error) {
-    console.error(`API request error for ${method} ${url}:`, error);
-    throw error;
-  }
+  await throwIfResNotOk(res);
+  return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

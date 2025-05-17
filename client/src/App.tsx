@@ -8,13 +8,10 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
-import SignIn from "@/pages/signin";
 import Community from "@/pages/community";
 import Protocols from "@/pages/protocols";
 import Achievements from "@/pages/achievements";
 import DataAnalysis from "@/pages/data-analysis";
-import { AuthProvider } from "@/hooks/use-auth";
-import { ProtectedRoute } from "@/components/protected-route";
 
 // Determine the base path from the import.meta.env (vite) or use an empty string
 const basePath = typeof import.meta.env.BASE_URL === 'string' 
@@ -25,25 +22,23 @@ const basePath = typeof import.meta.env.BASE_URL === 'string'
 function Router() {
   const [location] = useLocation();
   const isLandingPage = location === "/auth";
-  const isSignInPage = location === "/signin";
   
   return (
     <WouterRouter base={basePath}>
       <div className="min-h-screen flex flex-col">
-        {!isLandingPage && !isSignInPage && <Navbar />}
+        {!isLandingPage && <Navbar />}
         <main className="flex-1">
           <Switch>
+            <Route path="/" component={Home} />
             <Route path="/auth" component={Landing} />
-            <Route path="/signin" component={SignIn} />
-            <ProtectedRoute path="/" component={Home} />
-            <ProtectedRoute path="/community" component={Community} />
-            <ProtectedRoute path="/protocols" component={Protocols} />
-            <ProtectedRoute path="/achievements" component={Achievements} />
-            <ProtectedRoute path="/data-analysis" component={DataAnalysis} />
+            <Route path="/community" component={Community} />
+            <Route path="/protocols" component={Protocols} />
+            <Route path="/achievements" component={Achievements} />
+            <Route path="/data-analysis" component={DataAnalysis} />
             <Route component={NotFound} />
           </Switch>
         </main>
-        {!isLandingPage && !isSignInPage && <Footer />}
+        {!isLandingPage && <Footer />}
       </div>
     </WouterRouter>
   );
@@ -52,12 +47,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

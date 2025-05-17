@@ -1,47 +1,49 @@
-import { useEffect, useState } from "react";
-import { z } from "zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocation } from "wouter";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { z } from "zod";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useAuth } from "@/hooks/use-auth";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
-// Login schema
-const loginSchema = z.object({
+// Define the schema for sign in
+const signInSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-// Registration schema
+// Define the schema for registration
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
-  firstName: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  firstName: z.string().min(1, "First name is required"),
   lastName: z.string().optional(),
-  email: z.string().email("Invalid email address").optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  email: z.string().email("Please enter a valid email"),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type SignInFormData = z.infer<typeof signInSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function SignIn() {
-  const [location, navigate] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("login");
+const SignIn = () => {
+  const [isSignIn, setIsSignIn] = useState(true);
+  const { loginMutation, registerMutation, user } = useAuth();
+  const { toast } = useToast();
+  const [_, setLocation] = useLocation();
 
-  const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  // Redirect if already logged in
+  if (user) {
+    setLocation("/");
+    return null;
+  }
+
+  const signInForm = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
     defaultValues: {
       username: "",
-      password: ""
+      password: "",
     },
   });
 
@@ -50,278 +52,227 @@ export default function SignIn() {
     defaultValues: {
       username: "",
       password: "",
-      confirmPassword: "",
       firstName: "",
       lastName: "",
       email: "",
     },
   });
 
-  // Redirect to home if already logged in
-  useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
-
-  const handleLogin = (data: LoginFormData) => {
+  const handleSignIn = (data: SignInFormData) => {
     loginMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/");
+        toast({
+          title: "Success",
+          description: "You have been signed in successfully",
+        });
+        setLocation("/");
       },
       onError: (error) => {
-        console.error("Login error:", error);
-      }
+        toast({
+          title: "Error",
+          description: error.message || "Failed to sign in. Please try again.",
+          variant: "destructive",
+        });
+      },
     });
   };
 
   const handleRegister = (data: RegisterFormData) => {
-    // Remove confirmPassword as it's not part of the user model
-    const { confirmPassword, ...userData } = data;
-    
-    // Add default values for missing fields
-    const completeUserData = {
-      ...userData,
-      biohackScore: 50,
-      currentStreak: 0,
-      lastCheckIn: null,
-    };
-    
-    registerMutation.mutate(completeUserData, {
+    registerMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/");
+        toast({
+          title: "Success",
+          description: "Account created successfully. You've been signed in.",
+        });
+        setLocation("/");
       },
       onError: (error) => {
-        console.error("Registration error:", error);
-      }
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create account. Please try again.",
+          variant: "destructive",
+        });
+      },
     });
   };
 
-  // If we're still in the process of checking authentication status, don't render anything yet
-  if (user === undefined) {
-    return null;
-  }
+  const toggleMode = () => {
+    setIsSignIn(!isSignIn);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left side - Auth forms */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center font-bold">Welcome to BioHacker</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to track your biohacking journey
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                    <FormField
-                      control={loginForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter your username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={loginMutation.isPending}
-                    >
-                      {loginMutation.isPending ? "Signing in..." : "Sign In"}
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-              
-              <TabsContent value="register">
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={registerForm.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={registerForm.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Choose a username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={registerForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="you@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={registerForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={registerMutation.isPending}
-                    >
-                      {registerMutation.isPending ? "Creating Account..." : "Create Account"}
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <div className="text-sm text-muted-foreground">
-              {activeTab === "login" ? (
-                <span>Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab("register"); }} className="text-primary hover:underline">Register</a></span>
-              ) : (
-                <span>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab("login"); }} className="text-primary hover:underline">Login</a></span>
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12 bg-gray-50">
+      <h1 className="mb-8 text-4xl font-bold text-center">
+        {isSignIn ? "Sign In" : "Create Account"}
+      </h1>
+
+      <Card className="w-full max-w-md p-6 bg-white rounded-lg shadow-sm">
+        {isSignIn ? (
+          <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
+            <div>
+              <Input
+                placeholder="Username"
+                {...signInForm.register("username")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {signInForm.formState.errors.username && (
+                <p className="mt-1 text-sm text-red-500">
+                  {signInForm.formState.errors.username.message}
+                </p>
               )}
             </div>
-          </CardFooter>
-        </Card>
-      </div>
-      
-      {/* Right side - Hero section */}
-      <div className="w-full md:w-1/2 bg-gradient-to-r from-primary to-primary-foreground p-8 md:p-12 flex flex-col justify-center hidden md:block">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">Optimize Your Wellbeing</h1>
-          <p className="text-white/90 text-lg mb-8">
-            Track your biometrics, discover protocols that work for you, and join a community of biohackers to reach your peak performance.
+
+            <div>
+              <Input
+                type="password"
+                placeholder="Password"
+                {...signInForm.register("password")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {signInForm.formState.errors.password && (
+                <p className="mt-1 text-sm text-red-500">
+                  {signInForm.formState.errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full p-4 text-lg font-medium text-white bg-black hover:bg-gray-800"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? "Signing in..." : "Sign In"}
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                className="text-sm text-gray-600 hover:underline"
+                onClick={() => alert("Password reset functionality coming soon!")}
+              >
+                Forgot password?
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
+            <div>
+              <Input
+                placeholder="Username"
+                {...registerForm.register("username")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {registerForm.formState.errors.username && (
+                <p className="mt-1 text-sm text-red-500">
+                  {registerForm.formState.errors.username.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Input
+                placeholder="Email"
+                {...registerForm.register("email")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {registerForm.formState.errors.email && (
+                <p className="mt-1 text-sm text-red-500">
+                  {registerForm.formState.errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Input
+                placeholder="First Name"
+                {...registerForm.register("firstName")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {registerForm.formState.errors.firstName && (
+                <p className="mt-1 text-sm text-red-500">
+                  {registerForm.formState.errors.firstName.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Input
+                placeholder="Last Name (Optional)"
+                {...registerForm.register("lastName")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {registerForm.formState.errors.lastName && (
+                <p className="mt-1 text-sm text-red-500">
+                  {registerForm.formState.errors.lastName.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Input
+                type="password"
+                placeholder="Password"
+                {...registerForm.register("password")}
+                className="w-full p-4 text-lg border-gray-200"
+              />
+              {registerForm.formState.errors.password && (
+                <p className="mt-1 text-sm text-red-500">
+                  {registerForm.formState.errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full p-4 text-lg font-medium text-white bg-black hover:bg-gray-800"
+              disabled={registerMutation.isPending}
+            >
+              {registerMutation.isPending ? "Creating account..." : "Create Account"}
+            </Button>
+          </form>
+        )}
+      </Card>
+
+      <div className="mt-6 text-center">
+        {isSignIn ? (
+          <p>
+            Don't have an account?{" "}
+            <button
+              type="button"
+              className="font-bold hover:underline"
+              onClick={toggleMode}
+            >
+              Create one.
+            </button>
           </p>
-          
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <div className="bg-white/20 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">Track Your Progress</h3>
-                <p className="text-white/80">Monitor your metrics and see how your health evolves over time.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="bg-white/20 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">Discover Protocols</h3>
-                <p className="text-white/80">Find and follow science-backed protocols to improve your health.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="bg-white/20 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">Join the Community</h3>
-                <p className="text-white/80">Connect with like-minded biohackers and share your journey.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        ) : (
+          <p>
+            Already have an account?{" "}
+            <button
+              type="button"
+              className="font-bold hover:underline"
+              onClick={toggleMode}
+            >
+              Sign in.
+            </button>
+          </p>
+        )}
+      </div>
+
+      {/* Test account information */}
+      <div className="mt-12 p-4 bg-gray-100 rounded-lg max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-2">Test Accounts</h3>
+        <p className="text-sm mb-2">Use any of these accounts to test the application:</p>
+        <ul className="text-sm space-y-1">
+          <li><b>Username:</b> sarah_biohacker &nbsp; <b>Password:</b> password123</li>
+          <li><b>Username:</b> max_wellness &nbsp; <b>Password:</b> password123</li>
+          <li><b>Username:</b> emma_nutrition &nbsp; <b>Password:</b> password123</li>
+          <li><b>Username:</b> alex_fitness &nbsp; <b>Password:</b> password123</li>
+          <li><b>Username:</b> jamie_sleep &nbsp; <b>Password:</b> password123</li>
+        </ul>
       </div>
     </div>
   );
-}
+};
+
+export default SignIn;

@@ -4,8 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { insertUserSchema, User, InsertUser, loginSchema } from "@shared/schema";
-import { z } from "zod";
+import { insertUserSchema, User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,8 +17,7 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, InsertUser>;
 };
 
-// Define login data type from the schema
-type LoginData = z.infer<typeof loginSchema>;
+type LoginData = Pick<InsertUser, "username" | "password">;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -28,55 +26,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | undefined, Error>({
+  } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      // Use fetch directly with credentials to ensure cookies are handled properly
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        // Get error message
-        const errorText = await response.text();
-        let errorMessage = "Login failed";
-        
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.message) errorMessage = errorJson.message;
-        } catch (e) {
-          // If not JSON, use the text as the error message
-          if (errorText) errorMessage = errorText;
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      // Parse the response which contains both the token and user
-      const responseData = await response.json();
-      
-      // Return just the user object
-      return responseData.user || responseData;
+      const res = await apiRequest("POST", "/api/login", credentials);
+      const data = await res.json();
+      return data;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${user.firstName || "user"}!`,
-      });
     },
     onError: (error: Error) => {
-      console.error("Login error details:", error);
       toast({
         title: "Login failed",
-        description: "Unable to log in. Please check your credentials and try again.",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -84,48 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      // Use fetch directly with credentials to ensure cookies are handled properly
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        // Get error message
-        const errorText = await response.text();
-        let errorMessage = "Registration failed";
-        
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.message) errorMessage = errorJson.message;
-        } catch (e) {
-          // If not JSON, use the text as the error message
-          if (errorText) errorMessage = errorText;
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      // Parse the response which contains both the token and user
-      const responseData = await response.json();
-      
-      // Return just the user object
-      return responseData.user || responseData;
+      const res = await apiRequest("POST", "/api/register", credentials);
+      const data = await res.json();
+      return data;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: `Welcome to BioHacker, ${user.firstName || "new user"}!`,
-      });
     },
     onError: (error: Error) => {
-      console.error("Registration error details:", error);
       toast({
         title: "Registration failed",
-        description: "Unable to create account. Please try again with different credentials.",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -137,10 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      toast({
-        title: "Logout successful",
-        description: "You have been logged out.",
-      });
     },
     onError: (error: Error) => {
       toast({
