@@ -7,8 +7,22 @@ const isGitHubPages = import.meta.env.PROD;
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      // Check if response is JSON
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
+      } else {
+        // Fallback to text response
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`${res.status}: ${text}`);
+      }
+    } catch (e) {
+      // If JSON parsing fails, throw original error
+      if (e instanceof Error) throw e;
+      throw new Error(`${res.status}: ${res.statusText}`);
+    }
   }
 }
 

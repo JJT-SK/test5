@@ -35,19 +35,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      // Simple direct fetch implementation to bypass complex error handling
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-        credentials: "include"
-      });
+      const res = await apiRequest("POST", "/api/login", credentials);
       
-      if (!response.ok) {
-        throw new Error("Login failed");
+      // Check if the response is okay
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Login failed" }));
+        throw new Error(errorData.message || "Login failed");
       }
       
-      return await response.json();
+      // Parse response
+      const userData = await res.json().catch(() => null);
+      if (!userData) throw new Error("Invalid response from server");
+      
+      return userData;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
