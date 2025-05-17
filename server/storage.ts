@@ -8,11 +8,8 @@ import {
   forumComments, type ForumComment, type InsertForumComment
 } from "@shared/schema";
 
-import session from "express-session";
-
+// No need for express-session with JWT authentication
 export interface IStorage {
-  // Session store
-  sessionStore: session.Store;
   
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -61,7 +58,7 @@ export class MemStorage implements IStorage {
   private forumPosts: Map<number, ForumPost>;
   private forumComments: Map<number, ForumComment>;
   
-  public sessionStore: session.Store;
+
   
   private userId: number;
   private protocolId: number;
@@ -80,11 +77,7 @@ export class MemStorage implements IStorage {
     this.forumPosts = new Map();
     this.forumComments = new Map();
     
-    // Initialize session store for authentication
-    const MemoryStore = createMemoryStore(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    });
+    // Using JWT for authentication instead of sessions
     
     this.userId = 1;
     this.protocolId = 1;
