@@ -80,9 +80,12 @@ export function setupAuth(app: any) {
         sameSite: 'strict'
       });
 
-      // Return user data (without password)
+      // Return user data (without password) and token
       const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
+      res.status(201).json({
+        user: userWithoutPassword,
+        token
+      });
     } catch (error) {
       console.error('Register error:', error);
       res.status(500).json({ message: 'Registration failed' });
@@ -126,9 +129,12 @@ export function setupAuth(app: any) {
         sameSite: 'strict'
       });
 
-      // Return user data (without password)
+      // Return user data (without password) and token
       const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json({
+        user: userWithoutPassword,
+        token
+      });
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ message: 'Login failed' });
@@ -137,7 +143,13 @@ export function setupAuth(app: any) {
 
   // Get authenticated user
   app.get('/api/user', isAuthenticated, (req: any, res: any) => {
-    res.json(req.user);
+    try {
+      const { password, ...userWithoutPassword } = req.user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: 'Failed to get user data' });
+    }
   });
 
   // Logout a user
