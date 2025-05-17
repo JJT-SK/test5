@@ -194,18 +194,35 @@ const ProtocolBuilder = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProtocol, setSelectedProtocol] = useState(sampleProtocols[0]);
   const [newProtocolInterventions, setNewProtocolInterventions] = useState<number[]>([]);
+  const [newProtocolName, setNewProtocolName] = useState("My New Protocol");
+  const [activeBoxIndex, setActiveBoxIndex] = useState(0);
 
   // Filter interventions based on search query
   const filteredInterventions = interventionsList.filter(intervention => 
     intervention.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Function to toggle intervention selection for the new protocol
-  const toggleInterventionSelection = (interventionId: number) => {
-    if (newProtocolInterventions.includes(interventionId)) {
-      setNewProtocolInterventions(newProtocolInterventions.filter(id => id !== interventionId));
-    } else if (newProtocolInterventions.length < 3) {
-      setNewProtocolInterventions([...newProtocolInterventions, interventionId]);
+  // Function to add an intervention to a specific box
+  const addInterventionToBox = (interventionId: number) => {
+    if (activeBoxIndex < 3) {
+      const newInterventions = [...newProtocolInterventions];
+      newInterventions[activeBoxIndex] = interventionId;
+      setNewProtocolInterventions(newInterventions);
+      
+      // Activate the next box if available
+      if (activeBoxIndex < 2) {
+        setActiveBoxIndex(activeBoxIndex + 1);
+      }
+    }
+  };
+  
+  // Function to save the new protocol
+  const saveProtocol = () => {
+    if (newProtocolInterventions.filter(id => id !== undefined).length > 0) {
+      // Here you would normally save to a database
+      alert(`Protocol "${newProtocolName}" saved successfully!`);
+    } else {
+      alert("Please add at least one intervention to save the protocol.");
     }
   };
 
@@ -238,19 +255,63 @@ const ProtocolBuilder = () => {
 
       {/* Protocol Building Area */}
       <div className="mb-8">
-        <div className="text-center mb-4">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-medium text-dark-medium">Build your next protocol</h2>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="text"
+              value={newProtocolName}
+              onChange={(e) => setNewProtocolName(e.target.value)}
+              className="w-64"
+              placeholder="Protocol name"
+            />
+            <Button 
+              variant="outline" 
+              className="flex items-center"
+              onClick={saveProtocol}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              Save
+            </Button>
+          </div>
         </div>
         <div className="flex justify-center space-x-4 mb-6">
-          {Array(3).fill(0).map((_, index) => (
-            <div 
-              key={index} 
-              className="w-32 h-32 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-primary"
-              onClick={() => {/* Add intervention logic */}}
-            >
-              <Plus className="text-gray-400 w-8 h-8" />
-            </div>
-          ))}
+          {Array(3).fill(0).map((_, index) => {
+            // Get the intervention for this box if it exists
+            const interventionId = newProtocolInterventions[index];
+            const intervention = interventionId !== undefined ? 
+              interventionsList.find(i => i.id === interventionId) : undefined;
+            
+            // Determine if this box is active (should be blue)
+            const isActive = index === activeBoxIndex;
+            
+            return (
+              <div 
+                key={index} 
+                className={`w-32 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center
+                  ${intervention ? 'border-green-500 bg-green-50' : 
+                    isActive ? 'border-blue-500 bg-blue-50 cursor-pointer' : 
+                    'border-gray-300 bg-gray-50 opacity-70'}`}
+                onClick={() => {
+                  // Only allow clicking the active box
+                  if (isActive) {
+                    // Logic for when a box is clicked will be handled in the intervention selection
+                  }
+                }}
+              >
+                {intervention ? (
+                  <>
+                    <span className="text-2xl mb-1">{intervention.icon}</span>
+                    <span className="text-sm text-center px-1">{intervention.name}</span>
+                  </>
+                ) : (
+                  <span className="text-gray-500 text-sm font-medium">Add below</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -292,15 +353,27 @@ const ProtocolBuilder = () => {
             {filteredInterventions.map((intervention) => (
               <li 
                 key={intervention.id} 
-                className="flex items-center cursor-pointer py-2 hover:bg-gray-50 pl-2 rounded"
+                className={`flex items-center justify-between cursor-pointer py-2 hover:bg-blue-50 pl-2 rounded transition-colors duration-150
+                  ${intervention.id === selectedIntervention.id ? "bg-gray-50" : ""}`}
                 onClick={() => setSelectedIntervention(intervention)}
               >
-                {intervention.id === selectedIntervention.id && (
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                )}
-                <span className={`${intervention.id === selectedIntervention.id ? "ml-0" : "ml-6"} text-lg`}>
-                  {intervention.name}
-                </span>
+                <div className="flex items-center">
+                  {intervention.id === selectedIntervention.id && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                  )}
+                  <span className={`${intervention.id === selectedIntervention.id ? "ml-0" : "ml-6"} text-lg`}>
+                    {intervention.name}
+                  </span>
+                </div>
+                <button
+                  className="text-gray-400 hover:text-blue-500 hover:bg-blue-100 p-1 rounded-full focus:outline-none"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent triggering the li onClick
+                    addInterventionToBox(intervention.id);
+                  }}
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
               </li>
             ))}
           </ul>
@@ -374,10 +447,10 @@ const ProtocolBuilder = () => {
             <div className="mt-6">
               <Button 
                 className="w-full"
-                onClick={() => toggleInterventionSelection(selectedIntervention.id)}
+                onClick={() => addInterventionToBox(selectedIntervention.id)}
               >
-                {newProtocolInterventions.includes(selectedIntervention.id) 
-                  ? "Remove from Protocol" 
+                {newProtocolInterventions.indexOf(selectedIntervention.id) !== -1 
+                  ? "Already in Protocol" 
                   : "Add to Protocol"}
               </Button>
             </div>
