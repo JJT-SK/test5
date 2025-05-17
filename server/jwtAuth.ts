@@ -86,16 +86,13 @@ export function setupAuth(app: any) {
       res.cookie('token', token, {
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: false, // Allow non-secure cookies in development
+        sameSite: 'lax' // Needed for redirect after login
       });
 
-      // Return user data (without password) and token
+      // Return user data (without password)
       const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json({
-        user: userWithoutPassword,
-        token
-      });
+      res.status(201).json(userWithoutPassword);
     } catch (error) {
       console.error('Register error:', error);
       res.status(500).json({ message: 'Registration failed' });
