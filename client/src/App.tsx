@@ -9,7 +9,6 @@ import Footer from "@/components/footer";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import Community from "@/pages/community";
-import Protocols from "@/pages/protocols";
 import ProtocolBuilder from "@/pages/protocol-builder";
 import Achievements from "@/pages/achievements";
 import DataAnalysis from "@/pages/data-analysis";
@@ -33,8 +32,8 @@ function Router() {
             <Route path="/" component={Home} />
             <Route path="/auth" component={Landing} />
             <Route path="/community" component={Community} />
-            <Route path="/protocols" component={Protocols} />
             <Route path="/protocol-builder" component={ProtocolBuilder} />
+            <Route path="/protocols" component={ProtocolBuilder} />
             <Route path="/achievements" component={Achievements} />
             <Route path="/data-analysis" component={DataAnalysis} />
             <Route component={NotFound} />
