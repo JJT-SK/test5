@@ -1,0 +1,110 @@
+Webpage Layout Description for Progress Tracker
+1. Overall Page Structure:
+
+The webpage is structured in a top-down, left-to-right layout. The content is organized into three main vertical sections within a single-column structure.
+
+2. Progress Tracker Section (Top of the Page)
+2.1 Header Section (Top-Center):
+
+Position: Top of the page, centered horizontally.
+Title: "Progress Tracker" in bold.
+Styling:
+The word "Tracker" is underlined to emphasize the feature.
+Font size is relatively large, making it the focal point of this section.
+2.2 Progress Chart Area (Below Header, Centered):
+
+Subheader Text:
+"Progress chart of [sleep dropdown] over the last [30 days dropdown]"
+The word "chart" and "days" are underlined, indicating interactive or editable fields.
+Dropdown elements are presented as gray rectangles with a small down arrow (V).
+Line Graph (Main Chart Area):
+Position: Below the subheader, centered horizontally.
+Graph Type: Line chart depicting sleep data over time.
+Graph Elements:
+X-Axis (Horizontal):
+Represents time, labeled "time" at the far right.
+Y-Axis (Vertical):
+Represents sleep, labeled "sleep" on the left side.
+Data Line:
+A black wavy line showing sleep variation over a specified period.
+Vertical Reference Lines:
+P1S (Blue Line): Positioned at an earlier point on the timeline.
+P2S (Green Line): Positioned in the middle.
+P2S (Yellow Line): Positioned later, indicating another event.
+Event Dots Below the X-Axis:
+Dots of various colors (red, blue, green, yellow) are scattered along the horizontal axis.
+These dots represent key events or data points and are aligned with corresponding graph points.
+2.3 Community Position Bar (Directly Below Line Chart):
+
+Label: "Your position vs the community" (underlined).
+Horizontal Comparison Bar:
+Color Gradient:
+Red (Left): Represents lower percentile.
+Yellow (Middle): Represents community average.
+Green (Right): Represents higher percentile.
+Your Position:
+Marked with a blue vertical tick slightly towards the right within the green zone.
+The word "you" is positioned directly above the blue marker.
+Community Label: Positioned below the bar.
+3. Biomarker Comparison Section (Center of the Page)
+3.1 Biomarker Comparison Title (Centered):
+
+Text: "Compare biomarkers between [dropdown date 1] and [dropdown date 2]"
+Dropdown Elements:
+Left: 23/04/25
+Right: 30/04/25
+Both dropdowns are gray rectangles with down arrows (V), indicating selection capability.
+The word "between" is underlined.
+Spider/Radar Chart (Below Title):
+Position: Centered, directly under the comparison title.
+Graph Structure:
+Axes:
+Top: Sleep
+Right: Stress
+Left: Abz
+Bottom: Xyz
+Graph Lines:
+Red Polygon: Represents data from one date.
+Blue Polygon: Represents data from another date.
+The polygons form diamond shapes, indicating multi-dimensional data comparison.
+Axis Lines:
+Clearly labeled and evenly spaced, forming a cross-like structure.
+4. Blood Test Comparison Section (Bottom of the Page)
+4.1 Blood Test Comparison Title (Centered):
+
+Text: "Compare blood tests between [dropdown date 1] and [dropdown date 2]"
+Dropdown Elements:
+Left: 23/04/25
+Right: 30/04/25
+Both dropdowns are gray rectangles with down arrows (V), indicating user interaction.
+Bar Chart (Directly Below Title):
+Position: Centered, below the blood test comparison title.
+Graph Structure:
+Two Grouped Bar Sets:
+Left Group (Blue Bars): Represents data from 23/04/25.
+Right Group (Yellow Bars): Represents data from 30/04/25.
+Number of Bars: Two bars per group, of varying heights.
+Bar Colors:
+Left (Blue): Indicates older data.
+Right (Yellow): Indicates more recent data.
+X-Axis Labels:
+Under each group, showing dates 23/04/25 and 30/04/25 respectively.
+Y-Axis:
+Represents measurement values, but no explicit label is shown.
+5. Visual and Design Details:
+Color Scheme:
+Dominantly uses black, gray, blue, green, yellow, and red.
+Key data points and user positions are marked with blue for easy identification.
+Typography:
+Bold and clear for headers.
+Standard font for descriptions.
+Underlining used for emphasis and indicating interactive elements.
+Alignment:
+Central alignment for main visual elements.
+Even spacing between sections for clear separation.
+Interactivity:
+Dropdowns are clearly styled with gray boxes and downward arrows, indicating the ability to select alternative options.
+6. Overall Usability:
+The page is designed to give an at-a-glance comparison of user data with community averages.
+Visual elements (charts and bars) are intuitive and color-coded, making data interpretation straightforward.
+The combination of line, radar, and bar charts allows for both temporal and dimensional comparisons.
