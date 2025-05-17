@@ -22,6 +22,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   email: true,
+  biohackScore: true,
+  currentStreak: true,
+  lastCheckIn: true,
 });
 
 // Protocols
