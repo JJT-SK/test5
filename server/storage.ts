@@ -81,7 +81,7 @@ export class MemStorage implements IStorage {
     this.forumComments = new Map();
     
     // Initialize session store for authentication
-    const MemoryStore = require('memorystore')(session);
+    const MemoryStore = createMemoryStore(session);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
