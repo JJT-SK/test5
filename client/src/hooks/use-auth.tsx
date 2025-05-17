@@ -33,14 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      try {
-        const res = await apiRequest("POST", "/api/login", credentials);
-        const data = await res.json();
-        return data;
-      } catch (error) {
-        console.error("Login API error:", error);
-        throw error;
+      // Simple direct fetch implementation to bypass complex error handling
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Login failed");
       }
+      
+      return await response.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -61,14 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      try {
-        const res = await apiRequest("POST", "/api/register", credentials);
-        const data = await res.json();
-        return data;
-      } catch (error) {
-        console.error("Registration API error:", error);
-        throw error;
+      // Simple direct fetch implementation to bypass complex error handling
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Registration failed");
       }
+      
+      return await response.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
