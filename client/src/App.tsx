@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import Community from "@/pages/community";
 import Protocols from "@/pages/protocols";
+import ProtocolBuilder from "@/pages/protocol-builder";
 import Achievements from "@/pages/achievements";
 import DataAnalysis from "@/pages/data-analysis";
 
