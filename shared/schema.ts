@@ -40,6 +40,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   lastCheckIn: true,
 });
 
+// Additional type for login payload
+export const loginSchema = z.object({
+  username: z.string().min(3).max(50),
+  password: z.string().min(6),
+});
+
 // Protocols
 export const protocols = pgTable("protocols", {
   id: serial("id").primaryKey(),
