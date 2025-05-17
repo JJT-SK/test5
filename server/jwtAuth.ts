@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { Request, Response, NextFunction, Express } from 'express';
 import { storage } from './storage';
 import { User } from '@shared/schema';
+import cookieParser from 'cookie-parser';
 
 // JWT secret key - should be set as environment variable in production
 const JWT_SECRET = process.env.JWT_SECRET || 'biohacker-jwt-secret-key';
@@ -56,22 +57,11 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
   }
 }
 
-// Hash a password
-export async function hashPassword(password: string): Promise<string> {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
-}
-
-// Compare passwords
-export async function comparePasswords(
-  candidatePassword: string,
-  hashedPassword: string
-): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, hashedPassword);
-}
-
 // Setup auth routes
 export function setupAuth(app: Express) {
+  // Add cookie parser middleware
+  app.use(cookieParser());
+  
   // Register a new user
   app.post('/api/register', async (req, res) => {
     try {
@@ -84,7 +74,8 @@ export function setupAuth(app: Express) {
       }
       
       // Hash the password
-      const hashedPassword = await hashPassword(password);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
       
       // Create the user
       const user = await storage.createUser({
@@ -128,7 +119,7 @@ export function setupAuth(app: Express) {
       }
       
       // Check password
-      const isMatch = await comparePasswords(password, user.password);
+      const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
