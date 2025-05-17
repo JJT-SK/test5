@@ -34,6 +34,7 @@ function Router() {
             <Route path="/auth" component={Landing} />
             <Route path="/community" component={Community} />
             <Route path="/protocols" component={Protocols} />
+            <Route path="/protocol-builder" component={ProtocolBuilder} />
             <Route path="/achievements" component={Achievements} />
             <Route path="/data-analysis" component={DataAnalysis} />
             <Route component={NotFound} />

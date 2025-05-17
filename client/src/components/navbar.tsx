@@ -14,6 +14,7 @@ const Navbar = () => {
     { path: "/", label: "Dashboard", icon: <FaHome /> },
     { path: "/community", label: "Community", icon: <FaUsers /> },
     { path: "/protocols", label: "Protocols", icon: <FaFlask /> },
+    { path: "/protocol-builder", label: "Protocol Builder", icon: <FaFlask /> },
     { path: "/achievements", label: "Achievements", icon: <FaTrophy /> },
     { path: "/data-analysis", label: "Data Analysis", icon: <FaChartLine /> },
   ];
