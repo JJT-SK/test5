@@ -1,0 +1,137 @@
+
+
+#### **1. Overall Page Structure:**
+
+The webpage follows a **top-down and left-to-right structure**, with the content organized in a grid-like fashion. The main elements are segmented into clearly defined areas, creating a logical and user-friendly interface.
+
+---
+
+#### **2. Header Section (Top-Center):**
+
+* Positioned at the **top center** of the page, occupying the entire width.
+* The header contains the title **"Protocol Builder"**:
+
+  * **Font Style:** Bold and prominent, likely using a large font size.
+  * **Alignment:** Centered horizontally within the header.
+* The header serves as a visual cue to immediately identify the page’s function.
+
+---
+
+#### **3. Protocol Selection Area (Directly Below Header, Centered):**
+
+* Located immediately **below the header**, horizontally centered.
+* The area contains **three protocol buttons** arranged in a **horizontal row**, each representing a different protocol.
+* **Protocol 1 (Active Protocol):**
+
+  * Positioned on the **left side** of this area.
+  * A **rounded rectangular button** with a **green background**.
+  * Contains **four icons related to biohacking** arranged in a square pattern.
+  * **Text:** "Protocol 1" written in bold within the button.
+* **Inactive Protocols (Protocol 2 and 3):**
+
+  * Placed to the **right of Protocol 1**, side by side.
+  * Both buttons are **gray rounded rectangles**.
+  * Contain **four black dots** similar to Protocol 1, but the gray color indicates inactivity.
+
+---
+
+#### **4. Protocol Building Area (Below Protocol Selection, Centered):**
+
+* Positioned directly **underneath the protocol buttons**, maintaining a **center alignment**.
+* Text Prompt: **"Build your next protocol"**, displayed in a regular font.
+* Below the text, there are **three empty placeholder boxes** arranged horizontally:
+
+  * **Shape:** Square with dashed borders, indicating they are empty.
+  * **Symbol:** A **plus sign (+)** in the center of each box, suggesting an interactive element where users can add components.
+* **Spacing:** Equal spacing between each placeholder box to maintain visual balance.
+
+---
+
+#### **5. Search Bar (Directly Below Protocol Building Area, Centered):**
+
+* Placed **immediately below the placeholder boxes**, also centered.
+* The search bar is a **horizontal rectangular input field** with a **magnifying glass icon** on the left.
+* **Purpose:** Allows users to search for specific protocols or components.
+
+---
+
+#### **6. Category Selection (Below Search Bar, Centered):**
+
+* Positioned directly **below the search bar**.
+* Contains **three rounded rectangular buttons**, aligned horizontally.
+* **Button 1 (Category 1):**
+
+  * On the **left side**, colored **blue** to indicate selection.
+  * **Text:** "Category 1" in white or contrasting font.
+* **Button 2 (Category 2):**
+
+  * Positioned in the **middle**, colored **gray**, indicating it is unselected.
+  * **Text:** "Category 2"
+* **Button 3 (Category 3):**
+
+  * On the **right side**, also **gray** and unselected.
+  * **Text:** "Category 3"
+* All three buttons have the same shape, size, and alignment for uniformity.
+
+---
+
+#### **7. Activity/Intervention List (Left Side of Lower Section):**
+
+* Located on the **left-hand side**, directly below the category buttons.
+* Displayed as a **vertical list** of text items.
+* The list items are:
+
+  * Meditation
+  * Cold exposure
+  * Creating
+  * **Ashwagandha (Highlighted)**: Marked with a **green dot** on the left.
+  * Red light
+  * Melatonin
+  * Lions mane
+  * Blue light
+  * Semen retention
+* **Text Style:** Plain and evenly spaced vertically.
+* **Highlighting:** The currently selected item (**Ashwagandha**) has a small **green circular marker** next to it, making it visually distinct.
+
+---
+
+#### **8. Detailed Information Panel (Right Side of Lower Section):**
+
+* Positioned to the **right of the activity list**, occupying the **right half of the page**.
+* The panel is structured in a **card-like format** with the following elements:
+
+**Title and Icon:**
+
+* **Position:** Top of the panel.
+* **Text:** "Ashwagandha" in a bold, slightly larger font.
+* **Icon:** A **green leaf symbol** next to the title, representing a natural or herbal element.
+
+**Description:**
+
+* **Position:** Below the title.
+* **Text:** "Ayurvedic root extract that can be consumed orally."
+* **Font:** Standard, slightly smaller than the title.
+
+**Impact Indicators:**
+
+* **Longevity:** An **upward green arrow**, indicating a **positive effect**.
+* **Sleep:** Two **downward red arrows**, indicating a **negative effect**.
+
+**Metrics Bars:**
+
+* Four horizontal bars stacked vertically:
+
+  * **Evidence**: Medium length.
+  * **Cost**: Slightly shorter.
+  * **Difficulty**: Comparable to Evidence.
+  * **Time investment**: Longest among the four.
+* **Color:** All bars are in a **light blue shade**.
+* **Alignment:** All bars are **left-aligned** and equally spaced.
+
+---
+
+#### **9. Overall Visual Design:**
+
+* The design uses a **monochrome color palette with green, blue, gray, and black accents**.
+* Active elements (like Protocol 1 and Category 1) are **green and blue**, while inactive elements are **gray**.
+* The page is visually balanced with equal spacing between interactive elements and clear segmentation between different functional areas.
