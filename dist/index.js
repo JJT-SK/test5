@@ -826,7 +826,7 @@ var vite_config_default = defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true
   },
-  base: "/test2/",
+  base: "/HomeHubDashboard/",
   // Ensure the correct base path
   server: {
     host: true

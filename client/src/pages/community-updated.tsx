@@ -41,6 +41,7 @@ import { useForum } from "@/hooks/use-forum";
 import ForumPostCard from "@/components/forum/forum-post";
 import { ForumPost } from "@shared/schema";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 
 const CATEGORIES = [
   "All Posts",
@@ -215,7 +216,7 @@ const Community = () => {
                     <label htmlFor="content" className="text-sm font-medium">Post Content</label>
                     <Textarea 
                       id="content" 
-                      placeholder="I am tracking various biomarker to optimize my health. Here are my latest levels along with my current protocol." 
+                      placeholder="Describe what you're tracking and why..." 
                       rows={4}
                       {...form.register("content", { required: true })}
                     />
