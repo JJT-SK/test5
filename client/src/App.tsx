@@ -25,23 +25,25 @@ const basePath = typeof import.meta.env.BASE_URL === 'string'
 function Router() {
   const [location] = useLocation();
   const isLandingPage = location === "/auth";
+  const isSignInPage = location === "/signin";
   
   return (
     <WouterRouter base={basePath}>
       <div className="min-h-screen flex flex-col">
-        {!isLandingPage && <Navbar />}
+        {!isLandingPage && !isSignInPage && <Navbar />}
         <main className="flex-1">
           <Switch>
-            <Route path="/" component={Home} />
             <Route path="/auth" component={Landing} />
-            <Route path="/community" component={Community} />
-            <Route path="/protocols" component={Protocols} />
-            <Route path="/achievements" component={Achievements} />
-            <Route path="/data-analysis" component={DataAnalysis} />
+            <Route path="/signin" component={SignIn} />
+            <ProtectedRoute path="/" component={Home} />
+            <ProtectedRoute path="/community" component={Community} />
+            <ProtectedRoute path="/protocols" component={Protocols} />
+            <ProtectedRoute path="/achievements" component={Achievements} />
+            <ProtectedRoute path="/data-analysis" component={DataAnalysis} />
             <Route component={NotFound} />
           </Switch>
         </main>
-        {!isLandingPage && <Footer />}
+        {!isLandingPage && !isSignInPage && <Footer />}
       </div>
     </WouterRouter>
   );
@@ -50,10 +52,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
