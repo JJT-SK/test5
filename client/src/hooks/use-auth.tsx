@@ -59,9 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(errorMessage);
       }
       
-      // Parse user data
-      const data = await response.json();
-      return data.user;
+      // Parse the response which contains both the token and user
+      const responseData = await response.json();
+      
+      // Return just the user object
+      return responseData.user || responseData;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -106,9 +108,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(errorMessage);
       }
       
-      // Parse user data
-      const data = await response.json();
-      return data.user;
+      // Parse the response which contains both the token and user
+      const responseData = await response.json();
+      
+      // Return just the user object
+      return responseData.user || responseData;
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);

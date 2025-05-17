@@ -28,21 +28,31 @@ export function verifyToken(token: string): any {
 export function isAuthenticated(req: any, res: any, next: NextFunction) {
   try {
     // Get token from cookies
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
+      console.log('Authentication failed: No token found');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     // Verify token
-    const decoded = verifyToken(token);
-    
-    // Set user in request object
-    req.user = decoded;
-    
-    next();
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      
+      // For debugging
+      console.log('Token verified, user authenticated:', decoded);
+      
+      // Set user in request object
+      req.user = decoded;
+      
+      next();
+    } catch (tokenError) {
+      console.error('Token verification failed:', tokenError);
+      return res.status(401).json({ message: 'Invalid token' });
+    }
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid token' });
+    console.error('Authentication error:', error);
+    return res.status(401).json({ message: 'Authentication failed' });
   }
 }
 
@@ -125,16 +135,13 @@ export function setupAuth(app: any) {
       res.cookie('token', token, {
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: false, // Allow non-secure cookies in development
+        sameSite: 'lax' // Needed for redirect after login
       });
 
       // Return user data (without password) and token
       const { password: _, ...userWithoutPassword } = user;
-      res.json({
-        user: userWithoutPassword,
-        token
-      });
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ message: 'Login failed' });
