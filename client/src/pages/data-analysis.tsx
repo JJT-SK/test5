@@ -2,15 +2,14 @@ import { useState } from "react";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle
 } from "@/components/ui/card";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   LineChart,
   Line,
@@ -19,238 +18,318 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
-import { useBiohack } from "@/hooks/use-biohack";
 import { useBiometrics } from "@/hooks/use-biometrics";
-import MetricCard from "@/components/data-analysis/metric-card";
-import ChatAssistant from "@/components/data-analysis/chat-assistant";
-import { useProtocols } from "@/hooks/use-protocols";
+import { Progress } from "@/components/ui/progress";
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend
+} from 'recharts';
 
-const categories = [
-  { id: "sleep", label: "Sleep" },
-  { id: "energy", label: "Energy" },
-  { id: "cognitive", label: "Cognitive" }
+// Sample data for the charts
+const generateSampleSleepData = () => {
+  const data = [];
+  const now = new Date();
+  
+  for (let i = 30; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    
+    // Generate some random sleep data between 50 and 90
+    const sleepValue = Math.floor(Math.random() * 40) + 50;
+    
+    const dataPoint: any = {
+      date: date.toISOString().split('T')[0],
+      sleep: sleepValue,
+    };
+    
+    data.push(dataPoint);
+  }
+  
+  // Add some event markers
+  data[5].event = 'P1S';
+  data[12].event = 'P2S';
+  data[20].event = 'P2S';
+  
+  return data;
+};
+
+const communityPercentile = 75; // Your position in the community (0-100)
+
+// Radar chart data for biomarker comparison
+const radarData = [
+  { subject: 'Sleep', 'Date 1': 70, 'Date 2': 85, fullMark: 100 },
+  { subject: 'Stress', 'Date 1': 65, 'Date 2': 45, fullMark: 100 }, // Lower stress is better
+  { subject: 'ABZ', 'Date 1': 40, 'Date 2': 60, fullMark: 100 },
+  { subject: 'XYZ', 'Date 1': 55, 'Date 2': 75, fullMark: 100 },
+];
+
+// Blood test sample data
+const bloodTestData = [
+  { date: '23/04/25', metric1: 45, metric2: 65, metric3: 55 },
+  { date: '30/04/25', metric1: 40, metric2: 70, metric3: 60 },
 ];
 
 const DataAnalysis = () => {
-  const { userId } = useBiohack();
-  const { biometrics, isLoading, metrics } = useBiometrics();
-  const { protocols } = useProtocols();
-  const [activeCategory, setActiveCategory] = useState("sleep");
+  const { metrics } = useBiometrics();
+  const [metricType, setMetricType] = useState("sleep");
+  const [timeRange, setTimeRange] = useState("30 days");
+  const [compareDate1, setCompareDate1] = useState("23/04/25");
+  const [compareDate2, setCompareDate2] = useState("30/04/25");
   
-  // Get active protocol (for demo, we'll use the first one or a default)
-  const activeProtocol = protocols[0] || {
-    name: "No active protocol",
-    currentDay: 0,
-    duration: 0
-  };
+  // Sample sleep data with markers
+  const sleepData = generateSampleSleepData();
   
-  // Format data for charts based on the selected category
-  const getMetricDataKey = (category: string) => {
-    switch (category) {
-      case "sleep": return "sleepQuality";
-      case "energy": return "energyLevel";
-      case "cognitive": return "focusLevel";
-      default: return "sleepQuality";
-    }
-  };
+  // Event markers for the timeline below the chart
+  const eventMarkers = sleepData
+    .filter(item => item.event)
+    .map(item => ({
+      date: item.date,
+      event: item.event,
+    }));
   
-  const metricDataKey = getMetricDataKey(activeCategory);
-  
-  // Line chart data
-  const lineChartData = biometrics.map(b => ({
-    date: new Date(b.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    [metricDataKey]: b[metricDataKey]
-  }));
-  
-  // Comparison bar chart data
-  const barChartData = [
-    { name: "Week 1", value: metrics.weeklyAverages[0][metricDataKey] || 0 },
-    { name: "Week 2", value: metrics.weeklyAverages[1][metricDataKey] || 0 },
-    { name: "Week 3", value: metrics.weeklyAverages[2][metricDataKey] || 0 },
-    { name: "Week 4", value: metrics.weeklyAverages[3][metricDataKey] || 0 }
-  ];
-  
-  // Get metrics summary text based on category
-  const getMetricsSummary = () => {
-    switch (activeCategory) {
-      case "sleep":
-        return "Your sleep quality has improved by 12% since starting this protocol. Consistency in bedtime appears to be a key factor.";
-      case "energy":
-        return "Energy levels tend to peak mid-week and decline on weekends. Consider adjusting your weekend routine for more consistent energy.";
-      case "cognitive":
-        return "Focus and cognitive performance show strong correlation with your sleep quality. Days following 8+ hours of sleep show 15% higher focus scores.";
-      default:
-        return "Select a category to see personalized insights based on your biometric data.";
-    }
+  // Custom dot colors for the timeline
+  const getEventColor = (event) => {
+    if (event === 'P1S') return 'blue';
+    if (event === 'P2S') return 'green';
+    return 'yellow';
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-dark">Data Analysis</h1>
-        <p className="text-dark-light">Visualize your biohacking data and gain actionable insights.</p>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-3/4">
-          {/* Category Tabs and Main Data Section */}
-          <div className="mb-6">
-            <Card>
-              <CardHeader className="pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                <div>
-                  <CardTitle>Data Categories</CardTitle>
-                </div>
-                
-                <Tabs 
-                  value={activeCategory} 
-                  onValueChange={setActiveCategory}
-                  className="mt-2 sm:mt-0"
-                >
-                  <TabsList>
-                    {categories.map(category => (
-                      <TabsTrigger 
-                        key={category.id} 
-                        value={category.id}
-                      >
-                        {category.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </CardHeader>
-              
-              <CardContent className="pt-6">
-                {isLoading ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <p className="text-dark-light">Loading biometric data...</p>
-                  </div>
-                ) : (
-                  <div>
-                    {/* Protocol Information */}
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                      <h3 className="text-lg font-medium text-dark mb-2">
-                        {activeProtocol.name}
-                      </h3>
-                      <div className="flex items-center">
-                        <div className="flex-1">
-                          <p className="text-sm text-dark-light">
-                            Day {activeProtocol.currentDay} of {activeProtocol.duration}
-                          </p>
-                          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                            <div 
-                              className="bg-primary h-1.5 rounded-full" 
-                              style={{ width: `${(activeProtocol.currentDay / activeProtocol.duration) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <span className="bg-blue-100 text-primary text-xs px-2 py-0.5 rounded-full">
-                            {Math.round((activeProtocol.currentDay / activeProtocol.duration) * 100)}% Complete
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Metric Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                      <MetricCard 
-                        title="Average Score" 
-                        value={metrics.averages[metricDataKey]} 
-                        changePercent={5.2} 
-                        isPositive={true} 
-                      />
-                      <MetricCard 
-                        title="Highest Score" 
-                        value={metrics.highest[metricDataKey]} 
-                        secondaryText="Recorded on May 12" 
-                      />
-                      <MetricCard 
-                        title="Consistency" 
-                        value={metrics.consistency[metricDataKey]} 
-                        suffix="%" 
-                        changePercent={-2.1} 
-                        isPositive={false} 
-                      />
-                    </div>
-
-                    {/* Charts Area */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div className="h-64">
-                        <h3 className="text-sm font-medium text-dark-light mb-2">Historical Trend</h3>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={lineChartData}
-                            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            <Line 
-                              type="monotone" 
-                              dataKey={metricDataKey} 
-                              name={activeCategory === "sleep" ? "Sleep Quality" : 
-                                    activeCategory === "energy" ? "Energy Level" : "Focus Level"} 
-                              stroke="#3B82F6" 
-                              strokeWidth={2}
-                              activeDot={{ r: 8 }} 
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                      
-                      <div className="h-64">
-                        <h3 className="text-sm font-medium text-dark-light mb-2">Weekly Comparison</h3>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={barChartData}
-                            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            <Bar 
-                              dataKey="value" 
-                              name={activeCategory === "sleep" ? "Avg Sleep Quality" : 
-                                    activeCategory === "energy" ? "Avg Energy Level" : "Avg Focus Level"} 
-                              fill="#8B5CF6" 
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                    
-                    {/* Analysis Summary */}
-                    <div className="mt-6 p-4 bg-light rounded-lg">
-                      <h3 className="text-lg font-medium text-dark mb-2">Analysis</h3>
-                      <p className="text-dark-medium">{getMetricsSummary()}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Progress Tracker Section */}
+      <section className="mb-12">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold">
+            Progress <span className="underline">Tracker</span>
+          </h1>
         </div>
         
-        <div className="lg:w-1/4">
-          {/* ChatBot Card */}
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle>AI Assistant</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChatAssistant category={activeCategory} />
-            </CardContent>
+        <div className="mb-8">
+          <div className="text-center mb-4">
+            <p className="text-lg">
+              Progress chart of{" "}
+              <Select value={metricType} onValueChange={setMetricType}>
+                <SelectTrigger className="w-[100px] inline-block mx-1 bg-gray-200">
+                  <SelectValue placeholder="sleep" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sleep">sleep</SelectItem>
+                  <SelectItem value="energy">energy</SelectItem>
+                  <SelectItem value="stress">stress</SelectItem>
+                </SelectContent>
+              </Select>
+              {" "}over the last{" "}
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-[100px] inline-block mx-1 bg-gray-200">
+                  <SelectValue placeholder="30 days" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7 days">7 days</SelectItem>
+                  <SelectItem value="30 days">30 days</SelectItem>
+                  <SelectItem value="90 days">90 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </p>
+          </div>
+          
+          <Card className="p-4">
+            {/* Line Chart */}
+            <div className="h-64 mb-8">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={sleepData}
+                  margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={false} 
+                    axisLine={{ stroke: '#ccc' }}
+                    label={{ value: 'time', position: 'right', offset: 0 }}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    label={{ value: 'sleep', angle: -90, position: 'insideLeft' }}
+                  />
+                  <ReferenceLine x={sleepData[5].date} stroke="blue" label={{ value: "P1S", position: 'top' }} />
+                  <ReferenceLine x={sleepData[12].date} stroke="green" label={{ value: "P2S", position: 'top' }} />
+                  <ReferenceLine x={sleepData[20].date} stroke="yellow" label={{ value: "P2S", position: 'top' }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="sleep" 
+                    stroke="#000" 
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              
+              {/* Event markers below the chart */}
+              <div className="mt-1 flex items-center px-10">
+                {sleepData.map((item, index) => (
+                  <div key={index} className="flex-1 flex justify-center">
+                    {item.event && (
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: getEventColor(item.event) }}
+                      ></div>
+                    )}
+                    {!item.event && index % 4 === 0 && (
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'red' }}></div>
+                    )}
+                    {!item.event && index % 5 === 0 && (
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'blue' }}></div>
+                    )}
+                    {!item.event && index % 6 === 0 && (
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'green' }}></div>
+                    )}
+                    {!item.event && index % 7 === 0 && (
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'yellow' }}></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Community Position Bar */}
+            <div className="mt-8">
+              <p className="text-center mb-3">
+                Your <span className="underline">position</span> vs the community
+              </p>
+              <div className="relative">
+                <div className="flex h-10 mb-1">
+                  <div className="w-1/3 bg-red-500"></div>
+                  <div className="w-1/3 bg-yellow-500"></div>
+                  <div className="w-1/3 bg-green-500"></div>
+                </div>
+                <div 
+                  className="absolute top-0 h-14 w-0.5 bg-blue-600" 
+                  style={{ left: `${communityPercentile}%`, marginTop: '-8px' }}
+                ></div>
+                <div 
+                  className="absolute text-xs"
+                  style={{ left: `${communityPercentile - 2}%`, top: '-20px' }}
+                >
+                  you
+                </div>
+                <div className="text-center text-sm mt-1">community</div>
+              </div>
+            </div>
           </Card>
         </div>
-      </div>
+      </section>
+      
+      {/* Biomarker Comparison Section */}
+      <section className="mb-12">
+        <div className="text-center mb-6">
+          <p className="text-lg">
+            Compare <span className="underline">biomarkers</span> between{" "}
+            <Select value={compareDate1} onValueChange={setCompareDate1}>
+              <SelectTrigger className="w-[100px] inline-block mx-1 bg-gray-200">
+                <SelectValue placeholder="23/04/25" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="23/04/25">23/04/25</SelectItem>
+                <SelectItem value="16/04/25">16/04/25</SelectItem>
+              </SelectContent>
+            </Select>
+            {" "}and{" "}
+            <Select value={compareDate2} onValueChange={setCompareDate2}>
+              <SelectTrigger className="w-[100px] inline-block mx-1 bg-gray-200">
+                <SelectValue placeholder="30/04/25" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30/04/25">30/04/25</SelectItem>
+                <SelectItem value="07/05/25">07/05/25</SelectItem>
+              </SelectContent>
+            </Select>
+          </p>
+        </div>
+        
+        <Card className="p-4">
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="subject" />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                <Radar
+                  name="Date 1"
+                  dataKey="Date 1"
+                  stroke="#D63939"
+                  fill="#D63939"
+                  fillOpacity={0.5}
+                />
+                <Radar
+                  name="Date 2"
+                  dataKey="Date 2"
+                  stroke="#3B82F6"
+                  fill="#3B82F6"
+                  fillOpacity={0.5}
+                />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </section>
+      
+      {/* Blood Test Comparison Section */}
+      <section>
+        <div className="text-center mb-6">
+          <p className="text-lg">
+            Compare <span className="underline">blood tests</span> between{" "}
+            <Select value={compareDate1} onValueChange={setCompareDate1}>
+              <SelectTrigger className="w-[100px] inline-block mx-1 bg-gray-200">
+                <SelectValue placeholder="23/04/25" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="23/04/25">23/04/25</SelectItem>
+                <SelectItem value="16/04/25">16/04/25</SelectItem>
+              </SelectContent>
+            </Select>
+            {" "}and{" "}
+            <Select value={compareDate2} onValueChange={setCompareDate2}>
+              <SelectTrigger className="w-[100px] inline-block mx-1 bg-gray-200">
+                <SelectValue placeholder="30/04/25" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30/04/25">30/04/25</SelectItem>
+                <SelectItem value="07/05/25">07/05/25</SelectItem>
+              </SelectContent>
+            </Select>
+          </p>
+        </div>
+        
+        <Card className="p-4">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  { name: 'Metric 1', [bloodTestData[0].date]: bloodTestData[0].metric1, [bloodTestData[1].date]: bloodTestData[1].metric1 },
+                  { name: 'Metric 2', [bloodTestData[0].date]: bloodTestData[0].metric2, [bloodTestData[1].date]: bloodTestData[1].metric2 },
+                  { name: 'Metric 3', [bloodTestData[0].date]: bloodTestData[0].metric3, [bloodTestData[1].date]: bloodTestData[1].metric3 },
+                ]}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Bar dataKey={bloodTestData[0].date} fill="#36A2EB" name={bloodTestData[0].date} />
+                <Bar dataKey={bloodTestData[1].date} fill="#FFCE56" name={bloodTestData[1].date} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </section>
     </div>
   );
 };
