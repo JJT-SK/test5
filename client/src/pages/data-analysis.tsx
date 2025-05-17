@@ -88,14 +88,14 @@ const DataAnalysis = () => {
   
   // Event markers for the timeline below the chart
   const eventMarkers = sleepData
-    .filter(item => item.event)
-    .map(item => ({
+    .filter((item: any) => item.event)
+    .map((item: any) => ({
       date: item.date,
       event: item.event,
     }));
   
   // Custom dot colors for the timeline
-  const getEventColor = (event) => {
+  const getEventColor = (event: string) => {
     if (event === 'P1S') return 'blue';
     if (event === 'P2S') return 'green';
     return 'yellow';
@@ -174,7 +174,7 @@ const DataAnalysis = () => {
               
               {/* Event markers below the chart */}
               <div className="mt-1 flex items-center px-10">
-                {sleepData.map((item, index) => (
+                {sleepData.map((item: any, index: number) => (
                   <div key={index} className="flex-1 flex justify-center">
                     {item.event && (
                       <div 
