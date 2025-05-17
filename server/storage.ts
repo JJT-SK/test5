@@ -100,6 +100,7 @@ export class MemStorage implements IStorage {
       firstName: "John",
       lastName: "Doe",
       email: "john@example.com",
+      profileImageUrl: null,
       biohackScore: 78,
       currentStreak: 12,
       lastCheckIn: new Date(),
@@ -260,9 +261,13 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id, 
+      profileImageUrl: insertUser.profileImageUrl || null,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      email: insertUser.email || null,
       biohackScore: 50,
       currentStreak: 0,
-      lastCheckIn: undefined,
+      lastCheckIn: null,
       createdAt: new Date() 
     };
     this.users.set(id, user);
