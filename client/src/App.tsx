@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,33 +12,30 @@ import Community from "@/pages/community";
 import Protocols from "@/pages/protocols";
 import Achievements from "@/pages/achievements";
 import DataAnalysis from "@/pages/data-analysis";
-
-// Determine the base path from the import.meta.env (vite) or use the GitHub Pages path
-const basePath = "/test2"; // Use the exact GitHub repository name
+import { useHashLocation } from '@/lib/use-hash-location';
 
 // Create router with hash-based routing for GitHub Pages compatibility
 function Router() {
-  const [location] = useLocation();
+  // Use hash-based routing for GitHub Pages compatibility
+  const [location] = useHashLocation();
   const isLandingPage = location === "/auth";
   
   return (
-    <WouterRouter base={basePath}>
-      <div className="min-h-screen flex flex-col">
-        {!isLandingPage && <Navbar />}
-        <main className="flex-1">
-          <Switch>
-            <Route path="/" component={Home} />
-            <Route path="/auth" component={Landing} />
-            <Route path="/community" component={Community} />
-            <Route path="/protocols" component={Protocols} />
-            <Route path="/achievements" component={Achievements} />
-            <Route path="/data-analysis" component={DataAnalysis} />
-            <Route component={NotFound} />
-          </Switch>
-        </main>
-        {!isLandingPage && <Footer />}
-      </div>
-    </WouterRouter>
+    <div className="min-h-screen flex flex-col">
+      {!isLandingPage && <Navbar />}
+      <main className="flex-1">
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/auth" component={Landing} />
+          <Route path="/community" component={Community} />
+          <Route path="/protocols" component={Protocols} />
+          <Route path="/achievements" component={Achievements} />
+          <Route path="/data-analysis" component={DataAnalysis} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+      {!isLandingPage && <Footer />}
+    </div>
   );
 }
 
