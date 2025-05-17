@@ -29,17 +29,15 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Initialize session store
-  const secret = process.env.SESSION_SECRET || "biohacker-secret-key-for-development";
+  // Set up session middleware
   const sessionSettings: session.SessionOptions = {
-    secret,
+    secret: process.env.SESSION_SECRET || "biohacker_secret_key",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     }
   };
 
@@ -48,23 +46,25 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure Passport strategy
+  // Set up passport local strategy
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+          return done(null, false);
+        } else {
+          return done(null, user);
         }
-        return done(null, user);
       } catch (err) {
         return done(err);
       }
     }),
   );
 
-  // Serialize and deserialize user
+  // Session serialization
   passport.serializeUser((user, done) => done(null, user.id));
+  
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
@@ -77,32 +77,25 @@ export function setupAuth(app: Express) {
   // Auth routes
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, email, firstName, lastName } = req.body;
-      
       // Check if username already exists
-      const existingUser = await storage.getUserByUsername(username);
+      const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
+
+      // Hash the password
+      const hashedPassword = await hashPassword(req.body.password);
       
       // Create user with hashed password
-      const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
-        username,
+        ...req.body,
         password: hashedPassword,
-        email,
-        firstName,
-        lastName
       });
-      
-      // Remove password from response
-      const userResponse = { ...user };
-      delete userResponse.password;
-      
-      // Log user in
+
+      // Log the user in
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(userResponse);
+        return res.status(201).json(user);
       });
     } catch (err) {
       next(err);
@@ -112,18 +105,11 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err: Error, user: SelectUser, info: any) => {
       if (err) return next(err);
-      if (!user) {
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
-      }
+      if (!user) return res.status(401).json({ message: "Invalid credentials" });
       
       req.login(user, (err) => {
         if (err) return next(err);
-        
-        // Remove password from response
-        const userResponse = { ...user };
-        delete userResponse.password;
-        
-        return res.json(userResponse);
+        return res.status(200).json(user);
       });
     })(req, res, next);
   });
@@ -131,30 +117,19 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      req.session.destroy((err) => {
-        if (err) return next(err);
-        res.clearCookie("connect.sid");
-        res.sendStatus(200);
-      });
+      res.sendStatus(200);
     });
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    // Remove password from response
-    const userResponse = { ...req.user };
-    delete userResponse.password;
-    
-    res.json(userResponse);
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    res.json(req.user);
   });
 
-  // Auth middleware for protected routes
+  // Protected routes middleware
   app.use("/api/protected/*", (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
     next();
   });
